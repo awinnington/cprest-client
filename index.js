@@ -49,7 +49,7 @@ const mycred = require('./auth/mycpauth')
  *
  */
 const CpApiClass = require('./cpclass')
-const toApi = new CpApiClass(myapisite.chkp)
+const toApi = new CpApiClass(myapisite.stage)
 
 var details = 'uid'
 
@@ -82,7 +82,7 @@ main()
 //.then(admins)
 
 async function main() {
-	startSession(mycred)
+	startSession(mycred.stage)
 		.then(sessiontoken => setSession(sessiontoken))
 		.then(() => showObjects(nodata, runcmd))
 		.then(objid => checkObject(objid))
@@ -90,6 +90,7 @@ async function main() {
 		//.then(myout => writeJson(myout))
 		.then(() => doParse(usedobj))
 		.then(chkuse => getObjectUse(chkuse))
+		.then(usedobj => awacr(usedobj[ip])
 		//.then(tagit => tagObject(tagit))
 		.then(myout => writeJson(myout))
 		.then(() => endSession())
@@ -353,6 +354,53 @@ async function doParse(objdat) {
 	} catch (err) {
 		console.log('error in doParse : ' + err)
 	}
+}
+
+
+async function awacr(mykey) {
+	let CONTINUE = true;
+	console.log("IN THE FUNCTION")
+	console.log(mykey)
+	//console.log(mykey)
+	//console.log("My key array 1")
+	//console.log(mykey[0]["rule"]["uid"])
+	//console.log("End of mykey array")
+	if (CONTINUE) {
+			for (x in mykey) {
+					console.log("XXXXXXXXXXXXXX START XXXXXXXXXXXXX")
+					console.log(mykey[x]["rule"])
+					console.log(mykey[x]["layer"])
+					let columns = (mykey[x]["rule-columns"])
+					console.log(columns)
+
+
+					let awdata = {}
+					awdata.uid = (mykey[x]["rule"])
+					console.log("AAAAA")
+					awdata.layer = (mykey[x]["layer"])
+					mycmd = "show-access-rule"
+					let setit = toApi.doPost(awdata, mycmd)
+					console.log("**")
+					//console.log(setit)
+					objdata = await callOut(setit.options, setit.postData)
+					//console.log(objdata)
+					console.log("--")
+
+					for (DDD of columns) {
+							console.log(objdata[DDD].length)
+							if (objdata[DDD].length > 1) {
+									console.log("SAFE TO DELETE")
+									console.log("ADD TAG TO QUEUE")
+							} else {
+									console.log("EJECT EJECT EJECT")
+									CONTINUE = flase
+							}
+					}
+					console.log("XXXXXXXXXXXXXX END XXXXXXXXXXXXX")
+
+			}
+	}
+	return (CONTINUE)
 }
 
 // pretty show json data to console
