@@ -8,7 +8,7 @@ const fs = require('fs');
 //const showpretty = require('prettyjson')
 
 const get = (p, o) =>
-  p.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, o)
+	p.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, o)
 
 
 /**
@@ -70,8 +70,8 @@ var myfilename = 'dump'
 
 var nodata = {}
 if (process.argv[2]) {
-        ip = process.argv[2]
-        nodata.filter = ip
+	ip = process.argv[2]
+	nodata.filter = ip
 	myfilename = ip
 	nodata['ip-only'] = true
 	nodata.type = 'host'
@@ -90,13 +90,13 @@ async function main() {
 		//.then(myout => writeJson(myout))
 		.then(() => doParse(usedobj))
 		.then(chkuse => getObjectUse(chkuse))
-		.then(usedobj => awacr(usedobj[ip])
+		.then(() => awaccessrules(usedobj[ip]))
 		//.then(tagit => tagObject(tagit))
 		.then(myout => writeJson(myout))
 		.then(() => endSession())
 		.then(exitstat => console.log(exitstat))
 		//.then(thindat => console.log(thindat))
-	.catch(endSession)
+		.catch(endSession)
 }
 
 async function admins() {
@@ -106,12 +106,12 @@ async function admins() {
 	myfilename = 'admins'
 	nodata = {}
 	startSession(mycred)
-	.then(sessiontoken => setSession(sessiontoken))
-	.then(() => showObjects(nodata, runcmd))
-	.then(myout => writeJson(myout))
-	.then(thindat => console.log(thindat))
-	.then(() => endSession())
-	.catch(endSession)
+		.then(sessiontoken => setSession(sessiontoken))
+		.then(() => showObjects(nodata, runcmd))
+		.then(myout => writeJson(myout))
+		.then(thindat => console.log(thindat))
+		.then(() => endSession())
+		.catch(endSession)
 }
 
 /** 
@@ -122,31 +122,31 @@ async function admins() {
  */
 
 async function showObjects(mydata, mycmd) {
-        try {
+	try {
 		var objdata = {}
 		var objarr = []
 		var cleanarr = []
-                mydata.offset = 0
-                mydata['details-level'] = details
-                mydata.limit = limit
-                console.log('showing session')
-                var setit = toApi.doPost(mydata, mycmd)
+		mydata.offset = 0
+		mydata['details-level'] = details
+		mydata.limit = limit
+		console.log('showing session')
+		var setit = toApi.doPost(mydata, mycmd)
 		//toApi.showOpt()
-                objdata = await callOut(setit.options, setit.postData)
-                objarr = objarr.concat(objdata.objects)
-                if (objdata.total > objdata.to) {
-                        while (objdata.total >= mydata.offset) {
-                                console.log('From ' + objdata.from + ' to ' + objdata.to + ' of ' + objdata.total + ' indexed')
-                                mydata.offset = Number(objdata.to)
-                                setit = toApi.doPost(mydata, mycmd)
-                                objdata = await callOut(setit.options, setit.postData)
-                                objarr = objarr.concat(objdata.objects)
-                        }
-                }
-                return objarr
-        } catch (err) {
-                console.log('error in showObjects : ' + err)
-        }
+		objdata = await callOut(setit.options, setit.postData)
+		objarr = objarr.concat(objdata.objects)
+		if (objdata.total > objdata.to) {
+			while (objdata.total >= mydata.offset) {
+				console.log('From ' + objdata.from + ' to ' + objdata.to + ' of ' + objdata.total + ' indexed')
+				mydata.offset = Number(objdata.to)
+				setit = toApi.doPost(mydata, mycmd)
+				objdata = await callOut(setit.options, setit.postData)
+				objarr = objarr.concat(objdata.objects)
+			}
+		}
+		return objarr
+	} catch (err) {
+		console.log('error in showObjects : ' + err)
+	}
 }
 
 /** 
@@ -163,12 +163,12 @@ async function checkObject(objarr) {
 		var mytagged = []
 		var myreturn = []
 		mycmd = 'show-object'
-                //mydata['details-level'] = details
+		//mydata['details-level'] = details
 		for (var x in objarr) {
 			let myobj = objarr[x]
 			mydata.uid = myobj
-                	var setit = toApi.doPost(mydata, mycmd)
-                	let indat = await callOut(setit.options, setit.postData)
+			var setit = toApi.doPost(mydata, mycmd)
+			let indat = await callOut(setit.options, setit.postData)
 			if (indat.object['ipv4-address'] === ip) {
 				console.log(indat.object)
 				mytagged = mytagged.concat(indat.object)
@@ -231,16 +231,16 @@ async function whereUsed(objarr) {
 	try {
 		var mydata = {}
 		mycmd = 'where-used'
-                mydata['details-level'] = details
-                mydata.indirect = true
+		mydata['details-level'] = details
+		mydata.indirect = true
 		for (var x in objarr) {
 			let myreturn = {}
 			mydata.uid = objarr[x]
-                	var setit = toApi.doPost(mydata, mycmd)
-                	myreturn[objarr[x]] = await callOut(setit.options, setit.postData)
-                	usedobj[ip] = usedobj[ip].concat(myreturn)
+			var setit = toApi.doPost(mydata, mycmd)
+			myreturn[objarr[x]] = await callOut(setit.options, setit.postData)
+			usedobj[ip] = usedobj[ip].concat(myreturn)
 		}
-                //usedobj[ip] = usedobj[ip].concat(myreturn)
+		//usedobj[ip] = usedobj[ip].concat(myreturn)
 		return usedobj
 	} catch (err) {
 		console.log('error in whereUsed : ' + err)
@@ -269,12 +269,12 @@ async function getUsedObject(objarr) {
 		var mydata = {}
 		var myreturn = []
 		mycmd = 'show-object'
-                //mydata['details-level'] = details
+		//mydata['details-level'] = details
 		for (var x in objarr) {
 			let myobj = objarr[x]
 			mydata.uid = myobj
-                	var setit = toApi.doPost(mydata, mycmd)
-                	let indat = await callOut(setit.options, setit.postData)
+			var setit = toApi.doPost(mydata, mycmd)
+			let indat = await callOut(setit.options, setit.postData)
 			//console.log(indat.object.type)
 			myreturn = myreturn.concat(indat.object)
 		}
@@ -290,13 +290,13 @@ async function tagObject(myobj) {
 		tags.add = 'DELETE'
 		var mydata = {}
 		var myreturn = []
-                //mydata['details-level'] = details
+		//mydata['details-level'] = details
 		for (var x in myobj) {
 			mydata.uid = myobj[x].uid
 			mydata.tags = tags
 			mycmd = 'set-' + myobj[x].type
-                	var setit = toApi.doPost(mydata, mycmd)
-                	let indat = await callOut(setit.options, setit.postData)
+			var setit = toApi.doPost(mydata, mycmd)
+			let indat = await callOut(setit.options, setit.postData)
 			//console.log(mycmd)
 			//console.log(mydata)
 			myreturn = myreturn.concat(indat)
@@ -333,7 +333,7 @@ async function doParse(objdat) {
 								let mycnt = Object.keys(objdat[ip][uid][usetype][used][arrs]).length
 								//console.log(Object.keys(objdat[ip][uid][usetype][used][arrs]))
 								//console.log(objdat[ip][uid][usetype][used][arrs])
-								console.log(mycnt + ' ' + arrs )
+								console.log(mycnt + ' ' + arrs)
 								myarrs[arrs] = myarrs[arrs].concat(objdat[ip][uid][usetype][used][arrs])
 								myres[used] = myres[used].concat(myarrs)
 							}
@@ -356,6 +356,21 @@ async function doParse(objdat) {
 	}
 }
 
+async function awaccessrules(STUFF)
+{
+	let ACRarray = []
+	console.log("XXXXXXX STARTING ACR CLEANUP XXXXXXXXXXX")
+	console.log(STUFF)
+	for (x in STUFF){
+		console.log(Object.keys(STUFF[x]))
+		let UID = (Object.keys(STUFF[x]))
+		console.log(Object.keys(STUFF[x][UID]["used-directly"]["access-control-rules"]))
+		ACRarray = STUFF[x][UID]["used-directly"]["access-control-rules"]
+		console.log(ACRarray)
+		ACR = await awacr(ACRarray)
+	}
+	console.log("XXXXXXX ENDING ACR CLEANUP XXXXXXXXXXX")
+}
 
 async function awacr(mykey) {
 	let CONTINUE = true;
@@ -366,151 +381,151 @@ async function awacr(mykey) {
 	//console.log(mykey[0]["rule"]["uid"])
 	//console.log("End of mykey array")
 	if (CONTINUE) {
-			for (x in mykey) {
-					console.log("XXXXXXXXXXXXXX START XXXXXXXXXXXXX")
-					console.log(mykey[x]["rule"])
-					console.log(mykey[x]["layer"])
-					let columns = (mykey[x]["rule-columns"])
-					console.log(columns)
+		for (x in mykey) {
+			console.log("XXXXXXXXXXXXXX START XXXXXXXXXXXXX")
+			console.log(mykey[x]["rule"])
+			console.log(mykey[x]["layer"])
+			let columns = (mykey[x]["rule-columns"])
+			console.log(columns)
 
 
-					let awdata = {}
-					awdata.uid = (mykey[x]["rule"])
-					console.log("AAAAA")
-					awdata.layer = (mykey[x]["layer"])
-					mycmd = "show-access-rule"
-					let setit = toApi.doPost(awdata, mycmd)
-					console.log("**")
-					//console.log(setit)
-					objdata = await callOut(setit.options, setit.postData)
-					//console.log(objdata)
-					console.log("--")
+			let awdata = {}
+			awdata.uid = (mykey[x]["rule"])
+			console.log("AAAAA")
+			awdata.layer = (mykey[x]["layer"])
+			mycmd = "show-access-rule"
+			let setit = toApi.doPost(awdata, mycmd)
+			console.log("**")
+			//console.log(setit)
+			objdata = await callOut(setit.options, setit.postData)
+			//console.log(objdata)
+			console.log("--")
 
-					for (DDD of columns) {
-							console.log(objdata[DDD].length)
-							if (objdata[DDD].length > 1) {
-									console.log("SAFE TO DELETE")
-									console.log("ADD TAG TO QUEUE")
-							} else {
-									console.log("EJECT EJECT EJECT")
-									CONTINUE = flase
-							}
-					}
-					console.log("XXXXXXXXXXXXXX END XXXXXXXXXXXXX")
-
+			for (DDD of columns) {
+				console.log(objdata[DDD].length)
+				if (objdata[DDD].length > 1) {
+					console.log("SAFE TO DELETE")
+					console.log("ADD TAG TO QUEUE")
+				} else {
+					console.log("EJECT EJECT EJECT")
+					CONTINUE = flase
+				}
 			}
+			console.log("XXXXXXXXXXXXXX END XXXXXXXXXXXXX")
+
+		}
 	}
 	return (CONTINUE)
 }
 
 // pretty show json data to console
 async function showJson(obj) {
-    return (showpretty.render(obj, {
-              keysColor: 'blue',
-              dashColor: 'white',
-              stringColor: 'green'
-    }));
+	return (showpretty.render(obj, {
+		keysColor: 'blue',
+		dashColor: 'white',
+		stringColor: 'green'
+	}));
 }
 
 // start a check point api session
 async function startSession(myauth) {
-        try {
-                console.log('starting session')
-                var setit = toApi.doPost(myauth, 'login')
+	try {
+		console.log('starting session')
+		var setit = toApi.doPost(myauth, 'login')
 		//toApi.showOpt()
-                sessionid = await callOut(setit.options, setit.postData)
-                return sessionid
-        } catch (err) {
-                console.log('error in startSession')
-                console.log(err)
-        }
+		sessionid = await callOut(setit.options, setit.postData)
+		return sessionid
+	} catch (err) {
+		console.log('error in startSession')
+		console.log(err)
+	}
 }
 
 // set session token to header
 async function setSession(mysession) {
-        try {
-                console.log('setting session')
-                toApi.setToken(mysession)
-                //toApi.showOpt()
-                return
-        } catch (err) {
-                console.log('error in setSession')
-                console.log(err)
-        }
+	try {
+		console.log('setting session')
+		toApi.setToken(mysession)
+		//toApi.showOpt()
+		return
+	} catch (err) {
+		console.log('error in setSession')
+		console.log(err)
+	}
 }
 
 async function pubSession() {
-        try {
-                console.log('publishing session')
+	try {
+		console.log('publishing session')
 		var mycmd = 'publish'
 		var nodata = {}
-                var mysession = await callOut(toApi.doPost(nodata, mycmd).options, toApi.doPost(nodata, mycmd).postData)
-               	//toApi.showOpt()
+		var mysession = await callOut(toApi.doPost(nodata, mycmd).options, toApi.doPost(nodata, mycmd).postData)
+		//toApi.showOpt()
 		await sleep(3000)
-                return mysession
-        } catch (err) {
-                console.log('error in pubSession : ' + err)
-        }
+		return mysession
+	} catch (err) {
+		console.log('error in pubSession : ' + err)
+	}
 }
 
 // end session and expire token from header
 async function endSession() {
-        try {
-                console.log('ending session')
+	try {
+		console.log('ending session')
 		var nodata = {}
-                var nosession = await callOut(toApi.doPost(nodata, 'logout').options, toApi.doPost(nodata, 'logout').postData)
-               	//toApi.showOpt()
-                return nosession
-        } catch (err) {
-                console.log('error in endSession : ' + err)
-        }
+		var nosession = await callOut(toApi.doPost(nodata, 'logout').options, toApi.doPost(nodata, 'logout').postData)
+		//toApi.showOpt()
+		return nosession
+	} catch (err) {
+		console.log('error in endSession : ' + err)
+	}
 }
 
 // go get the rest api data
 async function callOut(options, postData) {
-    return new Promise((resolve, reject) => {
-            var req = https.request(options, (res) => {
-            var myret = ''
-                    if (res.statusCode > 200) {
-                    process.stdout.write(res.statusCode + ' : ' + res.statusMessage + ' ' + options.path);
-                    }
-                    res.on('data', (d) => {
-                            myret += d
-                    });
-                    res.on('end', () => {
-                            resolve(JSON.parse(myret))
-                    });
-            });
-            req.on('error', (e) => {
-                    reject(e);
-            });
-            if (postData) {
-                    req.write(postData);
-            }
-            req.end();
-    })
+	return new Promise((resolve, reject) => {
+		var req = https.request(options, (res) => {
+			var myret = ''
+			if (res.statusCode > 200) {
+				process.stdout.write(res.statusCode + ' : ' + res.statusMessage + ' ' + options.path);
+			}
+			res.on('data', (d) => {
+				myret += d
+			});
+			res.on('end', () => {
+				resolve(JSON.parse(myret))
+			});
+		});
+		req.on('error', (e) => {
+			reject(e);
+		});
+		if (postData) {
+			req.write(postData);
+		}
+		req.end();
+	})
 }
 
 // save api output as json data to file
-async function writeJson (content) {
-        try {
-                var newfile = myfilename + '.json'
+async function writeJson(content) {
+	try {
+		var newfile = myfilename + '.json'
 		console.log('writing file . . . ' + newfile)
 		console.log(typeof content)
-                const data = await fs.writeFileSync(newfile, JSON.stringify(content, undefined, 2))
-                //file written successfully
+		const data = await fs.writeFileSync(newfile, JSON.stringify(content, undefined, 2))
+		//file written successfully
 		console.log(content)
-                console.log('Json data written to ' + newfile)
-                console.log('  --  ')
-                return content
-        } catch (err) {
-                console.error(err)
-        }
+		console.log('Json data written to ' + newfile)
+		console.log('  --  ')
+		return content
+	} catch (err) {
+		console.error(err)
+	}
 }
 
 // easy way to wait
 function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function countOf(obj) {
