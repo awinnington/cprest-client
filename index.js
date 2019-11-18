@@ -398,7 +398,7 @@ async function awaccessrules(STUFF) {
 		}
 	}
 	//console.log(ACR)
-	
+
 	console.log("XXXXXXX ENDING ACR CLEANUP XXXXXXXXXXX")
 }
 
@@ -426,7 +426,7 @@ async function awobjectpre(STUFF) {
 			OBJ = await awobject(GroupUID)
 			console.log("OBJECT ANALYSIS COMPLETE")
 			if (OBJ > 1) {
-				console.log(UID + " is safe to remove from GROUP " + GroupUID );
+				console.log(UID + " is safe to remove from GROUP " + GroupUID);
 				console.log("")
 			} else {
 				console.log(UID + " is NOT safe to remove from GROUP " + GroupUID);
@@ -435,7 +435,7 @@ async function awobjectpre(STUFF) {
 		}
 	}
 	//console.log(ACR)
-	
+
 	console.log("XXXXXXX END OBJECT-PRE CLEANUP XXXXXXXXXXX")
 }
 
