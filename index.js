@@ -17,7 +17,7 @@ const fs = require('fs');
  * myres = myres.concat(get([uid, '0', 'used-directly', '0', 'access-conrol-rules'], usedobj))
  * Or get a specific value, like the total count from the API:
  * myval = get([uid, '0', 'used-directly', '0', 'total'], usedobj)
- */ 
+ */
 const get = (p, o) =>
 	p.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, o)
 
@@ -374,23 +374,54 @@ async function doParse(objdat) {
  * @param  usedobj[ip] - UID and information of elements
  * @returns List of UIDs safe to delete, and UIDs not safe  
  */
-async function awaccessrules(STUFF)
-{
+async function awaccessrules(STUFF) {
+	let UID = ""
 	let ACRarray = []
 	console.log("XXXXXXX STARTING ACR CLEANUP XXXXXXXXXXX")
-	console.log(STUFF)
-	for (x in STUFF){
-		console.log(Object.keys(STUFF[x]))
-		let UID = (Object.keys(STUFF[x]))
-		console.log(Object.keys(STUFF[x][UID]["used-directly"]["access-control-rules"]))
+	//console.log(STUFF)
+	for (x in STUFF) {
+		//console.log(Object.keys(STUFF[x]))
+		UID = (Object.keys(STUFF[x]))
+		//console.log(Object.keys(STUFF[x][UID]["used-directly"]["access-control-rules"]))
 		ACRarray = STUFF[x][UID]["used-directly"]["access-control-rules"]
-		console.log(ACRarray)
-		ACR = await awacr(ACRarray)
+		if (ACRarray.length > 0) {
+			ACR = await awacr(ACRarray)
+			console.log("RULE ANALYSIS COMPLETE")
+			if (ACR) {
+				console.log(UID + " is safe to remove from Access Control Rules");
+				console.log("")
+			} else {
+				console.log(UID + " is NOT safe to remove from Access Control Rules");
+				console.log("")
+			}
+		}
 	}
+	//console.log(ACR)
+	
 	console.log("XXXXXXX ENDING ACR CLEANUP XXXXXXXXXXX")
 }
 
 
+/** 
+ * Cleans  up input for @awacr
+ * @function awaccessrules
+ * @param  usedobj[ip] - UID and information of elements
+ * @returns List of UIDs safe to delete, and UIDs not safe  
+ */
+async function awobjectpre(STUFF) {
+	let ACRarray = []
+	console.log("XXXXXXX STARTING ACR CLEANUP XXXXXXXXXXX")
+	//console.log(STUFF)
+	for (x in STUFF) {
+		//console.log(Object.keys(STUFF[x]))
+		let UID = (Object.keys(STUFF[x]))
+		//console.log(Object.keys(STUFF[x][UID]["used-directly"]["access-control-rules"]))
+		ACRarray = STUFF[x][UID]["used-directly"]["access-control-rules"]
+		//console.log(ACRarray)
+		ACR = await awacr(ACRarray)
+	}
+	console.log("XXXXXXX ENDING ACR CLEANUP XXXXXXXXXXX")
+}
 
 /** 
  * Checks each UID for groups
@@ -410,7 +441,7 @@ async function awobject(UID) {
 	console.log(group_member_length)
 	//console.log(objdata)
 	console.log("XXXXXXXXXXXXXX OBJECT FUNCTION END XXXXXXXXXXXXX")
-	return(group_member_length)
+	return (group_member_length)
 }
 
 
@@ -422,45 +453,43 @@ async function awobject(UID) {
  */
 async function awacr(mykey) {
 	let CONTINUE = true;
-	console.log("IN THE FUNCTION")
-	console.log(mykey)
+	//console.log("IN THE FUNCTION")
 	//console.log(mykey)
-	//console.log("My key array 1")
-	//console.log(mykey[0]["rule"]["uid"])
-	//console.log("End of mykey array")
 	if (CONTINUE) {
 		for (x in mykey) {
-			console.log("XXXXXXXXXXXXXX START XXXXXXXXXXXXX")
-			console.log(mykey[x]["rule"])
-			console.log(mykey[x]["layer"])
+			//console.log("XXXXXXXXXXXXXX START XXXXXXXXXXXXX")
+			//console.log(mykey[x]["rule"])
+			//console.log(mykey[x]["layer"])
 			let columns = (mykey[x]["rule-columns"])
-			console.log(columns)
-
+			//console.log(columns)
 
 			let awdata = {}
 			awdata.uid = (mykey[x]["rule"])
-			console.log("AAAAA")
+			//console.log("AAAAA")
 			awdata.layer = (mykey[x]["layer"])
 			mycmd = "show-access-rule"
 			let setit = toApi.doPost(awdata, mycmd)
-			console.log("**")
+			//console.log("**")
 			//console.log(setit)
 			objdata = await callOut(setit.options, setit.postData)
 			//console.log(objdata)
-			console.log("--")
+			//console.log("--")
 
 			for (DDD of columns) {
-				console.log(objdata[DDD].length)
+				//console.log(objdata[DDD].length)
+				//console.log(objdata[DDD])
 				if (objdata[DDD].length > 1) {
-					console.log("SAFE TO DELETE")
-					console.log("ADD TAG TO QUEUE")
+					//console.log("SAFE TO DELETE")
+					//console.log("ADD TAG TO QUEUE")
+					console.log("Rule " + awdata.uid + "at layer " + awdata.layer + " Has " + objdata[DDD].length + " object in the " + DDD + " column")
+
 				} else {
 					console.log("EJECT EJECT EJECT")
+					console.log("Rule " + awdata.uid + "at layer " + awdata.layer + " Has " + objdata[DDD].length + " object in the " + DDD + " column")
 					CONTINUE = flase
 				}
 			}
-			console.log("XXXXXXXXXXXXXX END XXXXXXXXXXXXX")
-
+			//console.log("XXXXXXXXXXXXXX END XXXXXXXXXXXXX")	
 		}
 	}
 	return (CONTINUE)
