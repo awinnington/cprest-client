@@ -101,6 +101,7 @@ async function main() {
 		//.then(myout => writeJson(myout))
 		.then(() => doParse(usedobj))
 		.then(chkuse => getObjectUse(chkuse))
+		.then(() => awobjectpre(usedobj[ip]))
 		.then(() => awaccessrules(usedobj[ip]))
 		//.then(tagit => tagObject(tagit))
 		.then(myout => writeJson(myout))
@@ -403,24 +404,39 @@ async function awaccessrules(STUFF) {
 
 
 /** 
- * Cleans  up input for @awacr
- * @function awaccessrules
+ * Cleans  up input for @awobject
+ * @function awobjectpre
  * @param  usedobj[ip] - UID and information of elements
  * @returns List of UIDs safe to delete, and UIDs not safe  
  */
 async function awobjectpre(STUFF) {
-	let ACRarray = []
-	console.log("XXXXXXX STARTING ACR CLEANUP XXXXXXXXXXX")
+	let UID = ""
+	let GroupUID = ""
+	let OBJarray = []
+	console.log("XXXXXXX START OBJECT-PRE CLEANUP XXXXXXXXXXX")
 	//console.log(STUFF)
 	for (x in STUFF) {
-		//console.log(Object.keys(STUFF[x]))
-		let UID = (Object.keys(STUFF[x]))
-		//console.log(Object.keys(STUFF[x][UID]["used-directly"]["access-control-rules"]))
-		ACRarray = STUFF[x][UID]["used-directly"]["access-control-rules"]
-		//console.log(ACRarray)
-		ACR = await awacr(ACRarray)
+		UID = (Object.keys(STUFF[x]))
+		OBJarray = STUFF[x][UID]["used-directly"]["objects"]
+		//console.log(OBJarray)
+		//console.log(OBJarray[0])
+		for (y in OBJarray) {
+			GroupUID = OBJarray[y]
+			//console.log(GroupUID)
+			OBJ = await awobject(GroupUID)
+			console.log("OBJECT ANALYSIS COMPLETE")
+			if (OBJ > 1) {
+				console.log(UID + " is safe to remove from GROUP " + GroupUID );
+				console.log("")
+			} else {
+				console.log(UID + " is NOT safe to remove from GROUP " + GroupUID);
+				console.log("")
+			}
+		}
 	}
-	console.log("XXXXXXX ENDING ACR CLEANUP XXXXXXXXXXX")
+	//console.log(ACR)
+	
+	console.log("XXXXXXX END OBJECT-PRE CLEANUP XXXXXXXXXXX")
 }
 
 /** 
@@ -429,18 +445,20 @@ async function awobjectpre(STUFF) {
  * @param  UIDs of list of objects 
  * @returns List of UIDs that are safe to remove the host, and a list of those that are not.
  */
-async function awobject(UID) {
-	console.log("XXXXXXXXXXXXXX OBJECT FUNCTION START XXXXXXXXXXXXX")
+async function awobject(GroupUID) {
+	//console.log("XXXXXXXXXXXXXX OBJECT FUNCTION START XXXXXXXXXXXXX")
 	let awdata = {}
-	awdata.uid = UID
+	//console.log(GroupUID)
+	awdata.uid = GroupUID
 	mycmd = "show-group"
+
 	let setit = toApi.doPost(awdata, mycmd)
-	//console.log(setit)
+	// //console.log(setit)
 	objdata = await callOut(setit.options, setit.postData)
 	let group_member_length = objdata.members.length
-	console.log(group_member_length)
-	//console.log(objdata)
-	console.log("XXXXXXXXXXXXXX OBJECT FUNCTION END XXXXXXXXXXXXX")
+	//console.log(group_member_length)
+	// //console.log(objdata)
+	// console.log("XXXXXXXXXXXXXX OBJECT FUNCTION END XXXXXXXXXXXXX")
 	return (group_member_length)
 }
 
