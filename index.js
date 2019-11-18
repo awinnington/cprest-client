@@ -70,6 +70,8 @@ var details = 'uid'
 var usedarr = []
 var usedobj = {}
 
+var resultsobj = {}
+
 //var myres = {}
 //const objdata = {}
 
@@ -108,7 +110,14 @@ async function main() {
 		.then(() => endSession())
 		.then(exitstat => console.log(exitstat))
 		//.then(thindat => console.log(thindat))
+		.then(() => awtestop())
 		.catch(endSession)
+}
+
+async function awtestop(){
+	console.log("RESULTS OBJECT")
+	console.log(JSON.stringify(resultsobj))
+	console.log("END RESULTS OBJECT")
 }
 
 async function admins() {
@@ -238,6 +247,23 @@ async function checkObject(objarr) {
  *     ]
  *  }
  */
+
+
+async function awwhereUsed(UID) {
+	try {
+		var mydata = {}
+		mycmd = 'where-used'
+		mydata['details-level'] = details.std
+		mydata.indirect = true
+		let myreturn = {}
+		mydata.uid = UID
+		var setit = toApi.doPost(mydata, mycmd)
+		myreturn = await callOut(setit.options, setit.postData)
+		return myreturn
+	} catch (err) {
+		console.log('error in whereUsed : ' + err)
+	}
+}
 
 async function whereUsed(objarr) {
 	try {
@@ -388,13 +414,15 @@ async function awaccessrules(STUFF) {
 		if (ACRarray.length > 0) {
 			ACR = await awacr(ACRarray)
 			console.log("RULE ANALYSIS COMPLETE")
-			if (ACR) {
+			if (ACR[0]) {
 				console.log(UID + " is safe to remove from Access Control Rules");
+				console.log(ACR)
 				console.log("")
 			} else {
 				console.log(UID + " is NOT safe to remove from Access Control Rules");
 				console.log("")
 			}
+			resultsobj[UID]={["access-control-rules"]:[ACR]}
 		}
 	}
 	//console.log(ACR)
@@ -414,7 +442,7 @@ async function awobjectpre(STUFF) {
 	let GroupUID = ""
 	let OBJarray = []
 	console.log("XXXXXXX START OBJECT-PRE CLEANUP XXXXXXXXXXX")
-	//console.log(STUFF)
+	console.log(STUFF)
 	for (x in STUFF) {
 		UID = (Object.keys(STUFF[x]))
 		OBJarray = STUFF[x][UID]["used-directly"]["objects"]
@@ -424,14 +452,27 @@ async function awobjectpre(STUFF) {
 			GroupUID = OBJarray[y]
 			//console.log(GroupUID)
 			OBJ = await awobject(GroupUID)
-			console.log("OBJECT ANALYSIS COMPLETE")
+			console.log("GROUP ANALYSIS COMPLETE")
 			if (OBJ > 1) {
 				console.log(UID + " is safe to remove from GROUP " + GroupUID);
+				resultsobj[UID]={[GroupUID]:{["Group"]:true}}
 				console.log("")
 			} else {
-				console.log(UID + " is NOT safe to remove from GROUP " + GroupUID);
+				console.log(UID + " MAY safe to remove from GROUP " + GroupUID);
+				//needs further analysis
+				let BOB = {}
+				let awtmp = {}
+				BOB = await awwhereUsed(GroupUID)
+				//console.log(BOB)
+				//console.log(BOB["used-directly"]["access-control-rules"])
+				LARRY = await awobjacr(BOB["used-directly"]["access-control-rules"])
+				console.log("RESULTS OF LARRY")
+				console.log(LARRY)
+				//resultsobj[UID]={["access-control-rules"]:[LARRY]}
+				//resultsobj[UID]={[GroupID]:{["Group"]:LARRY[0]}}
 				console.log("")
 			}
+			//resultsobj[UID]["groups"]=OBJ
 		}
 	}
 	//console.log(ACR)
@@ -442,8 +483,8 @@ async function awobjectpre(STUFF) {
 /** 
  * Checks each UID for groups
  * @function awobject
- * @param  UIDs of list of objects 
- * @returns List of UIDs that are safe to remove the host, and a list of those that are not.
+ * @param  GroupUID the a single UID for a group 
+ * @returns The length of the group members.
  */
 async function awobject(GroupUID) {
 	//console.log("XXXXXXXXXXXXXX OBJECT FUNCTION START XXXXXXXXXXXXX")
@@ -451,7 +492,6 @@ async function awobject(GroupUID) {
 	//console.log(GroupUID)
 	awdata.uid = GroupUID
 	mycmd = "show-group"
-
 	let setit = toApi.doPost(awdata, mycmd)
 	// //console.log(setit)
 	objdata = await callOut(setit.options, setit.postData)
@@ -466,14 +506,14 @@ async function awobject(GroupUID) {
 /** 
  * Checks each object for access-control-rules to see if the UID is the only object in the source/destination
  * @function awacr
- * @param  ARCarray - Array 
+ * @param  ARCarray - Array of rules
  * @returns if UID is safe to delete or not as far as access-control-rules go. 
  */
 async function awacr(mykey) {
 	let CONTINUE = true;
+	let ACRresults = []
 	//console.log("IN THE FUNCTION")
 	//console.log(mykey)
-	if (CONTINUE) {
 		for (x in mykey) {
 			//console.log("XXXXXXXXXXXXXX START XXXXXXXXXXXXX")
 			//console.log(mykey[x]["rule"])
@@ -499,18 +539,80 @@ async function awacr(mykey) {
 				if (objdata[DDD].length > 1) {
 					//console.log("SAFE TO DELETE")
 					//console.log("ADD TAG TO QUEUE")
-					console.log("Rule " + awdata.uid + "at layer " + awdata.layer + " Has " + objdata[DDD].length + " object in the " + DDD + " column")
+					temp = ("Rule " + awdata.uid + "at layer " + awdata.layer + " Has " + objdata[DDD].length + " object in the " + DDD + " column")
+					ACRresults.push(temp)
+					console.log(temp)
+
 
 				} else {
-					console.log("EJECT EJECT EJECT")
-					console.log("Rule " + awdata.uid + "at layer " + awdata.layer + " Has " + objdata[DDD].length + " object in the " + DDD + " column")
+					//console.log("EJECT EJECT EJECT")
+					temp = ("Rule " + awdata.uid + "at layer " + awdata.layer + " Has " + objdata[DDD].length + " object in the " + DDD + " column")
 					CONTINUE = flase
+					ACRresults.push(temp)
+					console.log(temp)
 				}
 			}
 			//console.log("XXXXXXXXXXXXXX END XXXXXXXXXXXXX")	
 		}
+
+	ACRresults.unshift(CONTINUE)
+	return (ACRresults)
+}
+
+
+/** 
+ * Checks each object for access-control-rules to see if the UID is the only object in the source/destination
+ * @function awobjacr
+ * @param  ARCarray - Array of rules
+ * @returns if UID is safe to delete or not as far as access-control-rules go. 
+ */
+async function awobjacr(mykey) {
+	let AWFLAG = true;
+	let OBJACRresults = []
+	//console.log("IN THE FUNCTION")
+	//console.log(mykey)
+	//if (CONTINUE) {
+	for (zz in mykey) {
+		//console.log("XXXXXXXXXXXXXX START XXXXXXXXXXXXX")
+		//console.log(mykey[x]["rule"])
+		//console.log(mykey[x]["layer"])
+		let columns = (mykey[zz]["rule-columns"])
+		//console.log(columns)
+
+		let awdata = {}
+		awdata.uid = (mykey[zz]["rule"]["uid"])
+		//console.log("AAAAA")
+		awdata.layer = (mykey[zz]["layer"]["uid"])
+		mycmd = "show-access-rule"
+		let setit = toApi.doPost(awdata, mycmd)
+		//console.log("**")
+		//console.log(setit)
+		objdata = await callOut(setit.options, setit.postData)
+		//console.log(objdata)
+		//console.log("--")
+
+		for (DDD of columns) {
+			//console.log(objdata[DDD].length)
+			//console.log(objdata[DDD])
+			if (objdata[DDD].length > 1) {
+				//console.log("SAFE TO DELETE")
+				//console.log("ADD TAG TO QUEUE")
+				temp = ("Rule " + awdata.uid + "at layer " + awdata.layer + " Has " + objdata[DDD].length + " object in the " + DDD + " column")
+				ACRresults.push(temp)
+				console.log(temp)
+			} else {
+				//console.log("OBJECT EJECT EJECT EJECT")
+				temp = ("Rule " + awdata.uid + "at layer " + awdata.layer + " Has " + objdata[DDD].length + " object in the " + DDD + " column")
+				console.log(temp)
+				OBJACRresults.push(temp)
+				AWFLAG = false
+			}
+		}
+		//console.log("XXXXXXXXXXXXXX END XXXXXXXXXXXXX")	
 	}
-	return (CONTINUE)
+	//}
+	OBJACRresults.unshift(AWFLAG)
+	return (OBJACRresults)
 }
 
 // pretty show json data to console
