@@ -7,6 +7,17 @@ const fs = require('fs');
 
 //const showpretty = require('prettyjson')
 
+/**
+ * Traverse object collected in object
+ * @param {String[]} getProps - Get object proerties and values with arry of filters
+ * @param {Object[]} usedobj - Used objects returned in an array of
+ * @example
+ * collect an array of objects that match search: 
+ * myres = myres.concat(get([uid, '0', 'used-directly', '0', 'objects'], usedobj))
+ * myres = myres.concat(get([uid, '0', 'used-directly', '0', 'access-conrol-rules'], usedobj))
+ * Or get a specific value, like the total count from the API:
+ * myval = get([uid, '0', 'used-directly', '0', 'total'], usedobj)
+ */ 
 const get = (p, o) =>
 	p.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, o)
 
@@ -356,6 +367,13 @@ async function doParse(objdat) {
 	}
 }
 
+
+/** 
+ * Cleans  up input for @awacr
+ * @function awaccessrules
+ * @param  usedobj[ip] - UID and information of elements
+ * @returns List of UIDs safe to delete, and UIDs not safe  
+ */
 async function awaccessrules(STUFF)
 {
 	let ACRarray = []
@@ -372,6 +390,36 @@ async function awaccessrules(STUFF)
 	console.log("XXXXXXX ENDING ACR CLEANUP XXXXXXXXXXX")
 }
 
+
+
+/** 
+ * Checks each UID for groups
+ * @function awobject
+ * @param  UIDs of list of objects 
+ * @returns List of UIDs that are safe to remove the host, and a list of those that are not.
+ */
+async function awobject(UID) {
+	console.log("XXXXXXXXXXXXXX OBJECT FUNCTION START XXXXXXXXXXXXX")
+	let awdata = {}
+	awdata.uid = UID
+	mycmd = "show-group"
+	let setit = toApi.doPost(awdata, mycmd)
+	//console.log(setit)
+	objdata = await callOut(setit.options, setit.postData)
+	let group_member_length = objdata.members.length
+	console.log(group_member_length)
+	//console.log(objdata)
+	console.log("XXXXXXXXXXXXXX OBJECT FUNCTION END XXXXXXXXXXXXX")
+	return(group_member_length)
+}
+
+
+/** 
+ * Checks each object for access-control-rules to see if the UID is the only object in the source/destination
+ * @function awacr
+ * @param  ARCarray - Array 
+ * @returns if UID is safe to delete or not as far as access-control-rules go. 
+ */
 async function awacr(mykey) {
 	let CONTINUE = true;
 	console.log("IN THE FUNCTION")
