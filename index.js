@@ -70,7 +70,9 @@ var details = 'uid'
 var usedarr = []
 var usedobj = {}
 
-var resultsobj = {}
+var badresultsarray = []
+var resultsarray = []
+var groupresultsarray = []
 
 //var myres = {}
 //const objdata = {}
@@ -114,9 +116,19 @@ async function main() {
 		.catch(endSession)
 }
 
-async function awtestop(){
-	console.log("RESULTS OBJECT")
-	console.log(JSON.stringify(resultsobj))
+async function awtestop() {
+	console.log("HOSTS that FAILED a test")
+	console.log(badresultsarray)
+	for (BAD of badresultsarray) {
+		let index = resultsarray.indexOf(BAD);
+		if (index > -1) {
+			resultsarray.splice(index, 1);
+		}
+	}
+	console.log("HOSTS SAFE TO DELETE")
+	console.log(resultsarray)
+	console.log("GROUPS SAFE TO REMOVE HOST FROM")
+	console.log(groupresultsarray)
 	console.log("END RESULTS OBJECT")
 }
 
@@ -416,13 +428,14 @@ async function awaccessrules(STUFF) {
 			console.log("RULE ANALYSIS COMPLETE")
 			if (ACR[0]) {
 				console.log(UID + " is safe to remove from Access Control Rules");
-				console.log(ACR)
+				resultsarray.push(UID[0])
+				//console.log(ACR)
 				console.log("")
 			} else {
 				console.log(UID + " is NOT safe to remove from Access Control Rules");
 				console.log("")
 			}
-			resultsobj[UID]={["access-control-rules"]:[ACR]}
+
 		}
 	}
 	//console.log(ACR)
@@ -455,28 +468,23 @@ async function awobjectpre(STUFF) {
 			console.log("GROUP ANALYSIS COMPLETE")
 			if (OBJ > 1) {
 				console.log(UID + " is safe to remove from GROUP " + GroupUID);
-				resultsobj[UID]={[GroupUID]:{["Group"]:true}}
+				groupresultsarray.push(GroupUID)
 				console.log("")
 			} else {
 				console.log(UID + " MAY safe to remove from GROUP " + GroupUID);
-				//needs further analysis
-				let BOB = {}
-				let awtmp = {}
 				BOB = await awwhereUsed(GroupUID)
-				//console.log(BOB)
-				//console.log(BOB["used-directly"]["access-control-rules"])
 				LARRY = await awobjacr(BOB["used-directly"]["access-control-rules"])
-				console.log("RESULTS OF LARRY")
-				console.log(LARRY)
-				//resultsobj[UID]={["access-control-rules"]:[LARRY]}
-				//resultsobj[UID]={[GroupID]:{["Group"]:LARRY[0]}}
+				if (LARRY[0]) {
+					resultsarray.push(UID[0])
+					groupresultsarray.push(GroupUID)
+				} else {
+					badresultsarray.push(UID[0])
+				}
+
 				console.log("")
 			}
-			//resultsobj[UID]["groups"]=OBJ
 		}
 	}
-	//console.log(ACR)
-
 	console.log("XXXXXXX END OBJECT-PRE CLEANUP XXXXXXXXXXX")
 }
 
@@ -514,46 +522,46 @@ async function awacr(mykey) {
 	let ACRresults = []
 	//console.log("IN THE FUNCTION")
 	//console.log(mykey)
-		for (x in mykey) {
-			//console.log("XXXXXXXXXXXXXX START XXXXXXXXXXXXX")
-			//console.log(mykey[x]["rule"])
-			//console.log(mykey[x]["layer"])
-			let columns = (mykey[x]["rule-columns"])
-			//console.log(columns)
+	for (x in mykey) {
+		//console.log("XXXXXXXXXXXXXX START XXXXXXXXXXXXX")
+		//console.log(mykey[x]["rule"])
+		//console.log(mykey[x]["layer"])
+		let columns = (mykey[x]["rule-columns"])
+		//console.log(columns)
 
-			let awdata = {}
-			awdata.uid = (mykey[x]["rule"])
-			//console.log("AAAAA")
-			awdata.layer = (mykey[x]["layer"])
-			mycmd = "show-access-rule"
-			let setit = toApi.doPost(awdata, mycmd)
-			//console.log("**")
-			//console.log(setit)
-			objdata = await callOut(setit.options, setit.postData)
-			//console.log(objdata)
-			//console.log("--")
+		let awdata = {}
+		awdata.uid = (mykey[x]["rule"])
+		//console.log("AAAAA")
+		awdata.layer = (mykey[x]["layer"])
+		mycmd = "show-access-rule"
+		let setit = toApi.doPost(awdata, mycmd)
+		//console.log("**")
+		//console.log(setit)
+		objdata = await callOut(setit.options, setit.postData)
+		//console.log(objdata)
+		//console.log("--")
 
-			for (DDD of columns) {
-				//console.log(objdata[DDD].length)
-				//console.log(objdata[DDD])
-				if (objdata[DDD].length > 1) {
-					//console.log("SAFE TO DELETE")
-					//console.log("ADD TAG TO QUEUE")
-					temp = ("Rule " + awdata.uid + "at layer " + awdata.layer + " Has " + objdata[DDD].length + " object in the " + DDD + " column")
-					ACRresults.push(temp)
-					console.log(temp)
+		for (DDD of columns) {
+			//console.log(objdata[DDD].length)
+			//console.log(objdata[DDD])
+			if (objdata[DDD].length > 1) {
+				//console.log("SAFE TO DELETE")
+				//console.log("ADD TAG TO QUEUE")
+				temp = ("Rule " + awdata.uid + "at layer " + awdata.layer + " Has " + objdata[DDD].length + " object in the " + DDD + " column")
+				ACRresults.push(temp)
+				console.log(temp)
 
 
-				} else {
-					//console.log("EJECT EJECT EJECT")
-					temp = ("Rule " + awdata.uid + "at layer " + awdata.layer + " Has " + objdata[DDD].length + " object in the " + DDD + " column")
-					CONTINUE = flase
-					ACRresults.push(temp)
-					console.log(temp)
-				}
+			} else {
+				//console.log("EJECT EJECT EJECT")
+				temp = ("Rule " + awdata.uid + "at layer " + awdata.layer + " Has " + objdata[DDD].length + " object in the " + DDD + " column")
+				CONTINUE = flase
+				ACRresults.push(temp)
+				console.log(temp)
 			}
-			//console.log("XXXXXXXXXXXXXX END XXXXXXXXXXXXX")	
 		}
+		//console.log("XXXXXXXXXXXXXX END XXXXXXXXXXXXX")	
+	}
 
 	ACRresults.unshift(CONTINUE)
 	return (ACRresults)
