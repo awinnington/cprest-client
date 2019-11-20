@@ -59,7 +59,7 @@ const mycred = require('./auth/mycpauth')
  *
  */
 const CpApiClass = require('./cpclass')
-const toApi = new CpApiClass(myapisite.stage)
+const toApi = new CpApiClass(myapisite.chkp)
 
 var details = 'uid'
 
@@ -102,7 +102,7 @@ main()
 //.then(admins)
 
 async function main() {
-	startSession(mycred.stage)
+	startSession(mycred.chkp)
 		.then(sessiontoken => setSession(sessiontoken))
 		.then(() => showObjects(nodata, runcmd))
 		.then(objid => checkObject(objid))
