@@ -42,7 +42,7 @@ const mycred = require('./auth/mycpauth')
  *
  */
 const CpApiClass = require('./cpclass')
-const toApi = new CpApiClass(myapisite.chkp)
+const toApi = new CpApiClass(myapisite.stage)
 const objdata = require('./' + process.argv[2])
 
 //console.log(objdata.group)
@@ -100,7 +100,7 @@ async function myHosts() {
 }
 
 async function main() {
-	startSession(mycred)
+	startSession(mycred.stage)
 		.then(sessiontoken => setSession(sessiontoken))
         .then(() => myGroups())
         .then(() => myRules())
