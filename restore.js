@@ -88,7 +88,7 @@ async function main() {
 
 async function myDescription() {
         try {
-                mycmd = 'show-access-rule'
+                mycmd = 'set-session'
                 let myobj ={}
                 myobj['description'] = "Session Description"
                 myobj.comments = "Session Comments"
