@@ -350,14 +350,18 @@ async function parseRuleUse(objdat) {
 				rulechk.layer = ruleobj.layer
 				//rulechk.name = ruleobj.name
 				let sremove = ruleobj.source.filter(x => allobjs[myuids].includes(x))
+				// console.log("########### SREMOVE START ########################")
+				// console.log(ruleobj.source)
+				// console.log("########### SREMOVE END ########################")
+				// console.log("")
 				// IF not the last member of the source
 				if (sremove.length > 0) {
-					console.log("##########################################")
-					console.log(sremove + ' src remove ' + sremove.length)
+					//console.log("########### SRC REMOVE ########################")
+					console.log(sremove + ' src remove ' + ruleobj.source.length)
 					let source = {}
 					source.remove = sremove
 					rulechk.source = source
-					if(sremove.length == 1){
+					if(ruleobj.source.length == 1){
 						rulechk.type = "access-rule"
 						allobjs[garbage] = allobjs[garbage].concat(rulechk)
 					} else {
@@ -369,12 +373,12 @@ async function parseRuleUse(objdat) {
 				let dremove = ruleobj.destination.filter(x => allobjs[myuids].includes(x))
 				// IF not the last memeber of the destination
 				if (dremove.length > 0) {
-					console.log("###########  DST REMOVE  ####################")
-					console.log(dremove + ' dst remove ' + dremove.length)
+					//console.log("###########  DST REMOVE  ####################")
+					console.log(dremove + ' dst remove ' + ruleobj.source.length)
 					let destination = {}
 					destination.remove = dremove
 					rulechk.destination = destination
-					if(dremove.length == 1){
+					if(ruleobj.source.length == 1){
 						rulechk.type = "access-rule"
 						allobjs[garbage] = allobjs[garbage].concat(rulechk)
 					} else {
