@@ -91,7 +91,7 @@ async function myDescription() {
                 mycmd = 'set-session'
                 let myobj ={}
                 myobj['description'] = "Session Description"
-                myobj.comments = "Session Comments"
+                myobj['new-name'] = "New Session Name"
 
                 var setit = toApi.doPost(myobj, mycmd)
                 let indat = await callOut(setit.options, setit.postData)
