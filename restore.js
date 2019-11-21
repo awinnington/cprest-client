@@ -89,7 +89,7 @@ async function main() {
 async function myDescription() {
         try {
                 mycmd = 'set-session'
-                let myobj ={}
+                let myobj = {}
                 myobj['description'] = "Session Description"
                 myobj['new-name'] = "New Session Name"
 

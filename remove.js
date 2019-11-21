@@ -105,12 +105,29 @@ async function main() {
         .then(() => myGroups())
         .then(() => myRules())
         .then(() => myHosts())
+        .then(() => myDescription())
         .then(() => pubSession())
 		.then(() => endSession())
 		.then(exitstat => console.log(exitstat))
 		//.then(() => console.dir(cleanobj))
 		//.then(thindat => console.log(thindat))
 	.catch(endSession)
+}
+
+async function myDescription() {
+        try {
+                mycmd = 'set-session'
+                let myobj ={}
+                myobj['description'] = "Session Description"
+                myobj['new-name'] = "New Session Name"
+
+                var setit = toApi.doPost(myobj, mycmd)
+                let indat = await callOut(setit.options, setit.postData)
+                //console.log(indat.object.type)
+                return await indat
+        } catch (err) {
+                console.log('error in getRule : ' + err)
+        }
 }
 
 async function setObject(myobj, mycmd) {

@@ -546,6 +546,22 @@ async function getRule(myobj) {
 	}
 }
 
+async function myDescription() {
+	try {
+			mycmd = 'set-session'
+			let myobj ={}
+			myobj['description'] = "Session Description"
+			myobj['new-name'] = "New Session Name"
+
+			var setit = toApi.doPost(myobj, mycmd)
+			let indat = await callOut(setit.options, setit.postData)
+			//console.log(indat.object.type)
+			return await indat
+	} catch (err) {
+			console.log('error in getRule : ' + err)
+	}
+}
+
 /** 
  * @function tagObjects 
  * @param {Object[]} myobj An array of tags to be added to a Check Point host object
