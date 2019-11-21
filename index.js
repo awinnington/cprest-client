@@ -378,7 +378,7 @@ async function parseRuleUse(objdat) {
 					let destination = {}
 					destination.remove = dremove
 					rulechk.destination = destination
-					if(ruleobj.source.length == 1){
+					if(ruleobj.destination.length == 1){
 						rulechk.type = "access-rule"
 						allobjs[garbage] = allobjs[garbage].concat(rulechk)
 					} else {
