@@ -200,6 +200,7 @@ async function checkObject(objarr) {
 				myback.name = indat.object.name
 				myback['ipv4-address'] = indat.object['ipv4-address']
 				myback.cmd = 'add-host'
+				myback['ignore-warnings'] = true
 				allobjs[restore] = allobjs[restore].concat(myback)
 			} else {
 				throw new Error(indat.object.uid + ' object IP ' + indat.object['ipv4-address'] + ' does not match filter : ' + ip)
