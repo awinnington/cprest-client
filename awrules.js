@@ -67,7 +67,6 @@ async function getLayerNames() {
                 objarr.forEach(x => layerarr.push(x.name))
                 //console.log(layerarr)
 
-
                 return layerarr
         } catch (err) {
                 console.log('error in getLayers : ' + err)
