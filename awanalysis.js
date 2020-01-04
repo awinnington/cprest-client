@@ -19,19 +19,10 @@ let lastSixmonth = (now - (180 * msday))
 let lastMonth = (now - (30 * msday))
 let lastSeven = (now - (7 * msday))
 let testdate = 0
-
-
-// if (testdate < lastSeven) console.log("One")
-// else if (testdate < lastMonth) console.log("Two")
-// else if (testdate < lastSixmonth) console.log("Three")
-// else console.log("Four")
-
 let importedrules = require("./aw-rules")
 let layers = (Object.keys(importedrules))
 let layer = ""
 let awruleobj = {}
-
-
 
 // Let's flatten the rulebase
 
@@ -53,13 +44,10 @@ for (layer of layers) {
 }
 
 //***************************** 
-
-
 //console.log(awruleobj)
 //cp.writeJson(awruleobj, 'aw-flat')
-
-
 //console.log(Object.keys(awruleobj))
+
 for (layer of layers) {
     let encount = 0
     let discount = 0
@@ -78,6 +66,10 @@ for (layer of layers) {
     let modifiedLastSixmonth = 0
     let modifiedLastMonth = 0
     let modifiedLastSeven = 0
+
+    let adminarray = []
+    var counts = {},
+        i, value;
 
     //console.log(awruleobj[layer])
 
@@ -126,11 +118,27 @@ for (layer of layers) {
 
     awruleobj[layer].forEach(element => {
         let testelement = element["hits"]["value"]
-       // console.log(testelement)
+        // console.log(testelement)
     })
 
     awruleobj[layer].forEach(element => {
-     //   console.log(element["rule-number"])
+        let testelement = element["meta-info"]["last-modifier"]
+        adminarray.push(testelement)
+        // console.log(testelement)
+    })
+
+    let adminunique = [...new Set(adminarray)];
+    for (let i = 0; i < adminarray.length; i++) {
+        value = adminarray[i];
+        if (typeof counts[value] === "undefined") {
+            counts[value] = 1;
+        } else {
+            counts[value]++;
+        }
+    }
+
+    awruleobj[layer].forEach(element => {
+        //   console.log(element["rule-number"])
         try {
             testdate = element["hits"]["last-date"]["posix"]
             //console.log(element["rule-number"])
@@ -159,6 +167,7 @@ for (layer of layers) {
     console.log("Enabled Rules: ", encount)
     console.log("Disabled Rules: ", discount)
     console.log("Zero Hit Rules: ", zerocount)
+    console.log("Admins", counts)
     console.log("**********")
     console.log("Rules used in last 7 days", hitsLastSeven)
     console.log("Rules used in last 30 days", hitsLastMonth)
