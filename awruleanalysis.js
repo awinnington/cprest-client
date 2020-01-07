@@ -160,6 +160,9 @@ async function analysis(ruleobj) {
         let discount = 0
         let zerocount = 0
         let anypermitcount = 0
+        let nocommentcount = 0
+        let nonamecount = 0
+
         let hitsLastYear = 0
         let hitsLastSixmonth = 0
         let hitsLastMonth = 0
@@ -261,6 +264,30 @@ async function analysis(ruleobj) {
             // console.log(testelement)
         })
 
+        awruleobj[layer].forEach(element => {
+            let testelement = element["track"]["type"]["name"]
+            //console.log(testelement)
+        })
+
+        awruleobj[layer].forEach(element => {
+            let testelement = element["name"]
+            if(testelement === "") nonamecount++
+            //console.log(testelement)
+        })
+
+        awruleobj[layer].forEach(element => {
+            let testelement = element["comments"]
+            if(testelement === "") nocommentcount++
+            //console.log(testelement)
+   
+        })
+
+        awruleobj[layer].forEach(element => {
+            let testelement = element["track"]["type"]["name"]
+            //console.log(testelement)
+   
+        })
+        
         //Gather all of the admins that made changes
         awruleobj[layer].forEach(element => {
             let testelement = element["meta-info"]["last-modifier"]
@@ -285,6 +312,8 @@ async function analysis(ruleobj) {
         console.log("Enabled Rules: ", encount)
         console.log("Disabled Rules: ", discount)
         console.log("Zero Hit Rules: ", zerocount)
+        console.log("Rules without comments", nocommentcount)
+        console.log("Rules without names", nonamecount)
         console.log("Service any with permit Rules: ", anypermitcount)
         console.log("Admins", counts)
         console.log("**********")
