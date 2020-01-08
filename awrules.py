@@ -4,18 +4,16 @@
 #
 #
 ##
-
-
-# A package for reading passwords without displaying them on the console.
+# A package for reading passwords without displaying them on the console
 from __future__ import print_function
-
-import sys, os
-import json
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 # cpapi is a library that handles the communication with the Check Point management server.
 from cpapi import APIClient, APIClientArgs
+
+import json
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 def main():
@@ -64,12 +62,12 @@ def main():
         print("Processing. Please wait...")
         show_access_layers_res = client.api_query("show-access-layers", "standard")
         if show_access_layers_res.success is False:
-            print("Failed to get the list of all host objects:\n{}".format(show_hosts_res.error_message))
+            print("Failed to get the list of all host objects:\n{}".format(show_access_layers_res.error_message))
             exit(1)
 
         layerarr = []
 
-        ##print(show_access_layers_res.data)
+        # print(show_access_layers_res.data)
         layers = show_access_layers_res.data['access-layers']
 
         for layer in layers:
@@ -81,19 +79,13 @@ def main():
         print("************************")
 
         awrulebase = {}
-        awrulearr = []
 
-        cmddata = {}
-        cmddata['name'] = ""
-        cmddata['use-object-dictionary'] = 'false'
-        cmddata['show-hits'] = 'true'
+        cmddata = {'name': "", 'use-object-dictionary': 'false', 'show-hits': 'true'}
 
         for layer in layerarr:
             cmddata['name'] = layer
             cmddata['offset'] = 0
             show_access_rulebase_res = client.api_call("show-access-rulebase", cmddata)
-            ##            print(show_access_rulebase_res.data['to'])
-            ##            print(show_access_rulebase_res.data['total'])
             awrulearr = show_access_rulebase_res.data['rulebase']
             while show_access_rulebase_res.data['total'] > show_access_rulebase_res.data['to']:
                 cmddata['offset'] = show_access_rulebase_res.data['to']
