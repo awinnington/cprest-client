@@ -20,6 +20,7 @@ diff.json
 .git-credentials
 .java/
 auth/*
+cpapi/*
 *.json
 !package.json
 # Node rules:
