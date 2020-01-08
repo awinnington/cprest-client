@@ -23,6 +23,7 @@ auth/*
 cpapi/*
 *.json
 !package.json
+fingerprint.txt
 # Node rules:
 ## Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
 .grunt
