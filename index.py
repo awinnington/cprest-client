@@ -4,18 +4,16 @@
 #
 #
 ##
-
-
-# A package for reading passwords without displaying them on the console.
+# A package for reading passwords without displaying them on the console
 from __future__ import print_function
-
-import sys, os
-import json
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 # cpapi is a library that handles the communication with the Check Point management server.
 from cpapi import APIClient, APIClientArgs
+
+import json
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 def main():
@@ -52,54 +50,141 @@ def main():
         # login to server:
         login_res = client.login(username, password)
         # print(login_res.data.get("sid"))
-        sid = login_res.data.get("sid")
-        print(sid)
+        # sid = login_res.data.get("sid")
+        # print(sid)
 
         if login_res.success is False:
             print("Login failed:\n{}".format(login_res.error_message))
             exit(1)
 
+        ### Actual Code Starts here ###
+
         print("Processing. Please wait...")
-        show_hosts_res = client.api_query("show-hosts", "standard")
-        if show_hosts_res.success is False:
-            print("Failed to get the list of all host objects:\n{}".format(show_hosts_res.error_message))
+
+        IPv4 = sys.argv[1]
+        print(IPv4)
+
+        IPv4obj = {}
+        IPv4obj['remove'] = []
+        IPv4obj['garbage'] = []
+        IPv4obj['restore'] = []
+
+        cmddata = {'ip-only': 'true', 'details-level': 'full', 'type': 'host'}
+        cmddata['filter'] = IPv4
+        cmddata['offset'] = 0
+
+        show_objects_res = client.api_call("show-objects", cmddata)
+        if show_objects_res.success is False:
+            print("Failed to get the list of all host objects:\n{}".format(show_access_layers_res.error_message))
             exit(1)
 
-        # obj_dictionary - for a given IP address, get an array of hosts (name, unique-ID) that use this IP address.
+        hostarr = []
+        hosts = show_objects_res.data['objects']
 
-        obj_dictionary = {}
+        #
+        # Test to see if the IP address matches the command line
+        #
 
-        # dup_ip_set - a collection of the duplicate IP addresses in all the host objects.
-        dup_ip_set = set()
+        for host in hosts:
+            # hostarr.append(host['uid'])
+            print("START OF HOST: ", host['name'])
+            if host['ipv4-address'] != IPv4:
+                print("IP Address of object does not match command line, exiting for caution")
+                exit(1)
 
-        for host in show_hosts_res.data:
-            ipaddr = host.get("ipv4-address")
-            if ipaddr is None:
-                print(host["name"] + " has no IPv4 address. Skipping...")
-                continue
-            host_data = {"name": host["name"], "uid": host["uid"]}
-            if ipaddr in obj_dictionary:
-                dup_ip_set.add(ipaddr)
-                obj_dictionary[ipaddr] += [host_data]  # '+=' modifies the list in place
+            # Pull the groups out of the show objects
 
-            else:
-                obj_dictionary[ipaddr] = [host_data]
+            # print(host['groups'])
+            if len(host['groups']) > 0:
+                for group in host['groups']:
+                    if len(group['members']) > 1:
+                        cmd = "set-group"
+                        data = {'name': group['name'], 'members': {'remove': host['name']}}
+                        tmplist = [cmd, data]
+                        IPv4obj['remove'].append(tmplist)
+                        data = {'name': group['name'], 'members': {'add': host['name']}}
+                        tmplist = [cmd, data]
+                        IPv4obj['restore'].append(tmplist)
+                    else:
+                        cmd = "set-group"
+                        data = {'name': group['name'], 'members': {'remove': host['name']}}
+                        tmplist = [cmd, data]
+                        IPv4obj['garbage'].append(tmplist)
 
-        # print list of duplicate IP addresses to the console
-        print("\n")
-        print("List of Duplicate IP addresses: ")
-        print("------------------------------- \n")
+            cmddata = {}
+            cmddata['uid'] = host['uid']
+            show_where_used_res = client.api_call("where-used", cmddata)
+            # print(show_where_used_res.data)
 
-        if len(dup_ip_set) == 0:
-            print("No hosts with duplicate IP addresses")
+            tempobj = show_where_used_res.data['used-directly']
 
-        # for every duplicate ip - print hosts with that ip:
-        for dup_ip in dup_ip_set:
-            print("\nIP Address: " + dup_ip + "")
-            print("----------------------------------")
+            print(tempobj.keys())
+            if len(tempobj['objects']) > 0:
+                for cpobject in tempobj['objects']:
+                    objarr = []
+                    groupobj = {}
+                    print(cpobject['type'])
+                    # if cpobject['type'] == 'group':
 
-            for obj in obj_dictionary[dup_ip]:
-                print(obj["name"] + " (" + obj["uid"] + ")")
+                    #
+                    #  Got groups covered, need to find other objects
+                    #  TODO: Come back here and add other objects
+                    #
+
+            if len(tempobj['access-control-rules']) > 0:
+                print("Object has access rules")
+                for cpobject in tempobj['access-control-rules']:
+                    # print(cpobject)
+                    print("CPOBJECT Keys:", cpobject.keys())
+                    rcolumns = cpobject['rule-columns']
+                    ruid = cpobject['rule']['uid']
+                    rlayer = cpobject['layer']['name']
+
+                    cmdddata = {}
+                    cmddata['uid'] = ruid
+                    cmddata['layer'] = rlayer
+                    show_access_rule_res = client.api_call("show-access-rule", cmddata)
+                    for column in rcolumns:
+                        print("The length of ", column, " is ", len(show_access_rule_res.data[column]))
+                        print(show_access_rule_res.data[column])
+                        uniqip = set()
+                        for tmpx in show_access_rule_res.data[column]:
+                            uniqip.add(tmpx['ipv4-address'])
+                        print(len(uniqip))
+                        if len(uniqip) > 1:
+                            cmd = "set-access-rule"
+                            data = {'layer': rlayer, 'uid': ruid, column: {'remove': host['name']}}
+                            tmplist = [cmd, data]
+                            IPv4obj['remove'].append(tmplist)
+                            data = {'layer': rlayer, 'uid': ruid, column: {'add': host['name']}}
+                            tmplist = [cmd, data]
+                            IPv4obj['restore'].append(tmplist)
+                        else:
+                            cmd = "set-access-rule"
+                            data = {'layer': rlayer, 'uid': ruid, column: {'remove': host['name']}}
+                            tmplist = [cmd, data]
+                            IPv4obj['garbage'].append(tmplist)
+
+            print("END of HOST", host['name'])
+            print("")
+        #
+        #  When the hosts are done
+        #
+
+        IPv4obj_pretty = json.dumps(IPv4obj, indent=2)
+        print("")
+        print(IPv4obj_pretty)
+
+        # print(tempobj['access-control-rules'])
+        #
+        # Can't be:
+        #  Last as source
+        #  Last in destination
+        #  Same IP even if different objects for all the sources, or dests
+        #  Any rule other then access-rule
+        #  Last Member of a group
+        #
+        #
 
 
 if __name__ == "__main__":

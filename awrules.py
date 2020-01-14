@@ -80,7 +80,7 @@ def main():
 
         awrulebase = {}
 
-        cmddata = {'name': "", 'use-object-dictionary': 'false', 'show-hits': 'true'}
+        cmddata = {'name': "", 'use-object-dictionary': 'true', 'show-hits': 'true'}
 
         for layer in layerarr:
             cmddata['name'] = layer
