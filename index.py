@@ -92,6 +92,15 @@ def main():
                 print("IP Address of object does not match command line, exiting for caution")
                 exit(1)
 
+            cmd = "delete-host"
+            data = {'name': host['name']}
+            tmplist = [cmd, data]
+            IPv4obj['remove'].append(tmplist)
+            cmd = "add-host"
+            data = host
+            tmplist = [cmd, data]
+            IPv4obj['restore'].append(tmplist)
+
             # Pull the groups out of the show objects
 
             # print(host['groups'])
@@ -118,8 +127,8 @@ def main():
 
             tempobj = show_where_used_res.data['used-directly']
 
-            print(tempobj.keys())
-            if len(tempobj['objects']) > 0:
+            # print(tempobj.keys())
+            if tempobj['objects']:
                 for cpobject in tempobj['objects']:
                     objarr = []
                     groupobj = {}
@@ -131,26 +140,34 @@ def main():
                     #  TODO: Come back here and add other objects
                     #
 
-            if len(tempobj['access-control-rules']) > 0:
+            if tempobj['threat-prevention-rules']:
+                IPv4obj['garbage'].append(tempobj['threat-prevention-rules'])
+
+            if tempobj['nat-rules']:
+                IPv4obj['garbage'].append(tempobj['nat-rules'])
+
+            # if len(tempobj['access-control-rules']) > 0:
+
+            if tempobj['access-control-rules']:
                 print("Object has access rules")
                 for cpobject in tempobj['access-control-rules']:
                     # print(cpobject)
-                    print("CPOBJECT Keys:", cpobject.keys())
+                    # print("CPOBJECT Keys:", cpobject.keys())
                     rcolumns = cpobject['rule-columns']
                     ruid = cpobject['rule']['uid']
                     rlayer = cpobject['layer']['name']
 
-                    cmdddata = {}
+                    cmddata = {}
                     cmddata['uid'] = ruid
                     cmddata['layer'] = rlayer
                     show_access_rule_res = client.api_call("show-access-rule", cmddata)
                     for column in rcolumns:
-                        print("The length of ", column, " is ", len(show_access_rule_res.data[column]))
-                        print(show_access_rule_res.data[column])
+                        # print("The length of ", column, " is ", len(show_access_rule_res.data[column]))
+                        # print(show_access_rule_res.data[column])
                         uniqip = set()
                         for tmpx in show_access_rule_res.data[column]:
                             uniqip.add(tmpx['ipv4-address'])
-                        print(len(uniqip))
+                        # print(len(uniqip))
                         if len(uniqip) > 1:
                             cmd = "set-access-rule"
                             data = {'layer': rlayer, 'uid': ruid, column: {'remove': host['name']}}
