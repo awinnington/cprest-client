@@ -95,11 +95,11 @@ def main():
             cmd = "delete-host"
             data = {'name': host['name']}
             tmplist = [cmd, data]
-            IPv4obj['remove'].append(tmplist)
+            IPv4obj['remove'].insert(0, tmplist)
             cmd = "add-host"
             data = host
             tmplist = [cmd, data]
-            IPv4obj['restore'].append(tmplist)
+            IPv4obj['restore'].insert(0, tmplist)
 
             # Pull the groups out of the show objects
 
@@ -110,15 +110,15 @@ def main():
                         cmd = "set-group"
                         data = {'name': group['name'], 'members': {'remove': host['name']}}
                         tmplist = [cmd, data]
-                        IPv4obj['remove'].append(tmplist)
+                        IPv4obj['remove'].insert(0, tmplist)
                         data = {'name': group['name'], 'members': {'add': host['name']}}
                         tmplist = [cmd, data]
-                        IPv4obj['restore'].append(tmplist)
+                        IPv4obj['restore'].insert(0, tmplist)
                     else:
                         cmd = "set-group"
                         data = {'name': group['name'], 'members': {'remove': host['name']}}
                         tmplist = [cmd, data]
-                        IPv4obj['garbage'].append(tmplist)
+                        IPv4obj['garbage'].insert(0, tmplist)
 
             cmddata = {}
             cmddata['uid'] = host['uid']
@@ -141,10 +141,10 @@ def main():
                     #
 
             if tempobj['threat-prevention-rules']:
-                IPv4obj['garbage'].append(tempobj['threat-prevention-rules'])
+                IPv4obj['garbage'].insert(0, tempobj['threat-prevention-rules'])
 
             if tempobj['nat-rules']:
-                IPv4obj['garbage'].append(tempobj['nat-rules'])
+                IPv4obj['garbage'].insert(0, tempobj['nat-rules'])
 
             # if len(tempobj['access-control-rules']) > 0:
 
@@ -172,15 +172,15 @@ def main():
                             cmd = "set-access-rule"
                             data = {'layer': rlayer, 'uid': ruid, column: {'remove': host['name']}}
                             tmplist = [cmd, data]
-                            IPv4obj['remove'].append(tmplist)
+                            IPv4obj['remove'].insert(0, tmplist)
                             data = {'layer': rlayer, 'uid': ruid, column: {'add': host['name']}}
                             tmplist = [cmd, data]
-                            IPv4obj['restore'].append(tmplist)
+                            IPv4obj['restore'].insert(0, tmplist)
                         else:
                             cmd = "set-access-rule"
                             data = {'layer': rlayer, 'uid': ruid, column: {'remove': host['name']}}
                             tmplist = [cmd, data]
-                            IPv4obj['garbage'].append(tmplist)
+                            IPv4obj['garbage'].insert(0, tmplist)
 
             print("END of HOST", host['name'])
             print("")
@@ -191,6 +191,9 @@ def main():
         IPv4obj_pretty = json.dumps(IPv4obj, indent=2)
         print("")
         print(IPv4obj_pretty)
+
+        with open('host.json', 'w') as outfile:
+            outfile.write(IPv4obj_pretty)
 
         # print(tempobj['access-control-rules'])
         #
