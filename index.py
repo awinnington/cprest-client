@@ -75,15 +75,10 @@ def main():
 
         show_objects_res = client.api_call("show-objects", cmddata)
         if show_objects_res.success is False:
-            print("Failed to get the list of all host objects:\n{}".format(show_access_layers_res.error_message))
+            print('Failed to show objects all host objects:\n{}'.format(show_objects_res.error_message))
             exit(1)
 
-        hostarr = []
         hosts = show_objects_res.data['objects']
-
-        #
-        # Test to see if the IP address matches the command line
-        #
 
         for host in hosts:
             # hostarr.append(host['uid'])
@@ -93,32 +88,33 @@ def main():
                 exit(1)
 
             cmd = "delete-host"
-            data = {'name': host['name']}
-            tmplist = [cmd, data]
-            IPv4obj['remove'].insert(0, tmplist)
+            data1 = {'name': host['name']}
+            tmplist = [cmd, data1]
+            IPv4obj['remove'].append(tmplist)
+
             cmd = "add-host"
-            data = host
+            data = {}
+            data['name'] = host['name']
+            data['ipv4-address'] = host['ipv4-address']
+            data['color'] = host['color']
+            data['comments'] = host['comments']
+            if 'host-servers' in host:
+                data['host-servers'] = host['host-servers']
             tmplist = [cmd, data]
             IPv4obj['restore'].insert(0, tmplist)
 
             # Pull the groups out of the show objects
 
             # print(host['groups'])
-            if len(host['groups']) > 0:
+            if host['groups']:
                 for group in host['groups']:
-                    if len(group['members']) > 1:
-                        cmd = "set-group"
-                        data = {'name': group['name'], 'members': {'remove': host['name']}}
-                        tmplist = [cmd, data]
-                        IPv4obj['remove'].insert(0, tmplist)
-                        data = {'name': group['name'], 'members': {'add': host['name']}}
-                        tmplist = [cmd, data]
-                        IPv4obj['restore'].insert(0, tmplist)
-                    else:
-                        cmd = "set-group"
-                        data = {'name': group['name'], 'members': {'remove': host['name']}}
-                        tmplist = [cmd, data]
-                        IPv4obj['garbage'].insert(0, tmplist)
+                    cmd = "set-group"
+                    data = {'name': group['name'], 'members': {'remove': host['name']}}
+                    tmplist = [cmd, data]
+                    IPv4obj['remove'].insert(0, tmplist)
+                    data = {'name': group['name'], 'members': {'add': host['name']}}
+                    tmplist = [cmd, data]
+                    IPv4obj['restore'].append(tmplist)
 
             cmddata = {}
             cmddata['uid'] = host['uid']
@@ -127,63 +123,49 @@ def main():
 
             tempobj = show_where_used_res.data['used-directly']
 
-            # print(tempobj.keys())
-            if tempobj['objects']:
-                for cpobject in tempobj['objects']:
-                    objarr = []
-                    groupobj = {}
-                    print(cpobject['type'])
-                    # if cpobject['type'] == 'group':
+            for key in tempobj.keys():
+                print("the current key is:", key)
+                if key.startswith('objects') & bool(tempobj[key]):
+                    for cpobject in tempobj[key]:
+                        objarr = []
+                        groupobj = {}
+                        print(cpobject['type'])
+                        # if cpobject['type'] == 'group':
 
-                    #
-                    #  Got groups covered, need to find other objects
-                    #  TODO: Come back here and add other objects
-                    #
+                        #
+                        #  Got groups covered, need to find other objects
+                        #  TODO: Come back here and add other objects
+                        #
 
-            if tempobj['threat-prevention-rules']:
-                IPv4obj['garbage'].insert(0, tempobj['threat-prevention-rules'])
-
-            if tempobj['nat-rules']:
-                IPv4obj['garbage'].insert(0, tempobj['nat-rules'])
-
-            # if len(tempobj['access-control-rules']) > 0:
-
-            if tempobj['access-control-rules']:
-                print("Object has access rules")
-                for cpobject in tempobj['access-control-rules']:
-                    # print(cpobject)
-                    # print("CPOBJECT Keys:", cpobject.keys())
-                    rcolumns = cpobject['rule-columns']
-                    ruid = cpobject['rule']['uid']
-                    rlayer = cpobject['layer']['name']
-
-                    cmddata = {}
-                    cmddata['uid'] = ruid
-                    cmddata['layer'] = rlayer
-                    show_access_rule_res = client.api_call("show-access-rule", cmddata)
-                    for column in rcolumns:
-                        # print("The length of ", column, " is ", len(show_access_rule_res.data[column]))
-                        # print(show_access_rule_res.data[column])
-                        uniqip = set()
-                        for tmpx in show_access_rule_res.data[column]:
-                            uniqip.add(tmpx['ipv4-address'])
-                        # print(len(uniqip))
-                        if len(uniqip) > 1:
+                elif key.startswith('access-control-rules') & bool(tempobj[key]):
+                    print("Object has access rules")
+                    for cpobject in tempobj[key]:
+                        # print(cpobject)
+                        # print("CPOBJECT Keys:", cpobject.keys())
+                        rcolumns = cpobject['rule-columns']
+                        ruid = cpobject['rule']['uid']
+                        rlayer = cpobject['layer']['name']
+                        cmddata = {}
+                        cmddata['uid'] = ruid
+                        cmddata['layer'] = rlayer
+                        for column in rcolumns:
                             cmd = "set-access-rule"
                             data = {'layer': rlayer, 'uid': ruid, column: {'remove': host['name']}}
                             tmplist = [cmd, data]
                             IPv4obj['remove'].insert(0, tmplist)
                             data = {'layer': rlayer, 'uid': ruid, column: {'add': host['name']}}
                             tmplist = [cmd, data]
-                            IPv4obj['restore'].insert(0, tmplist)
-                        else:
-                            cmd = "set-access-rule"
-                            data = {'layer': rlayer, 'uid': ruid, column: {'remove': host['name']}}
-                            tmplist = [cmd, data]
-                            IPv4obj['garbage'].insert(0, tmplist)
+                            IPv4obj['restore'].append(tmplist)
+
+                elif tempobj[key]:
+                    if key == 'total':
+                        print("")
+                    else:
+                        IPv4obj['garbage'].insert(0, tempobj[key])
 
             print("END of HOST", host['name'])
             print("")
+
         #
         #  When the hosts are done
         #
@@ -194,17 +176,6 @@ def main():
 
         with open('host.json', 'w') as outfile:
             outfile.write(IPv4obj_pretty)
-
-        # print(tempobj['access-control-rules'])
-        #
-        # Can't be:
-        #  Last as source
-        #  Last in destination
-        #  Same IP even if different objects for all the sources, or dests
-        #  Any rule other then access-rule
-        #  Last Member of a group
-        #
-        #
 
 
 if __name__ == "__main__":
