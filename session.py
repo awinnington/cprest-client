@@ -1,8 +1,5 @@
 ###
 # Uses https://github.com/CheckPointSW/cp_mgmt_api_python_sdk
-# Connecting to remote CheckPoint MGMT server
-#
-#
 ##
 # A package for reading passwords without displaying them on the console
 from __future__ import print_function
@@ -47,11 +44,7 @@ def main():
             print("Could not get the server's fingerprint - Check connectivity with the server.")
             exit(1)
 
-        # login to server:
         login_res = client.login(username, password)
-        # print(login_res.data.get("sid"))
-        # sid = login_res.data.get("sid")
-        # print(sid)
 
         if login_res.success is False:
             print("Login failed:\n{}".format(login_res.error_message))
@@ -59,17 +52,26 @@ def main():
 
         ### Actual Code Starts here ###
 
-        res = client.api_call("show-sessions", {"details-level": "standard"})
-        res_pretty = json.dumps(res.data, indent=2)
-        print(res_pretty)
+        res = client.api_call("show-sessions", {"details-level": "full"})
+        openchanges = False
+        for session in res.data['objects']:
+            if session['changes'] > 0:
+                print(session['user-name'], " has ", session['changes'], " changes open and is UID: ", session['uid'])
+                openchanges = True
 
-        client.api_call("switch-session", {"uid": "2e86bb28-91a9-4a27-8a8f-ce5123173229"})
+        if openchanges == False:
+            print("No sessions with changes pending")
 
-        res = client.api_call("publish", {})
-        if res.success is False:
-            discard_write_to_log_file(api_client,
-                                      "Publish failed. Error:\n{}\nAborting all changes.".format(res.error_message))
-            return False
+        # res_pretty = json.dumps(res.data, indent=2)
+        # print(res_pretty)
+
+        #        client.api_call("switch-session", {"uid": "07283b1f-5a50-41db-be55-71cbdfaae1be"})
+
+        #        res = client.api_call("publish", {})
+        #        if res.success is False:
+        #            discard_write_to_log_file(api_client,
+        #                                      "Publish failed. Error:\n{}\nAborting all changes.".format(res.error_message))
+        #            return False
 
         client.api_call("logout", {})
 
