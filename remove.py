@@ -62,26 +62,134 @@ def main():
         with open('./host.json') as json_file:
             myfile = json.load(json_file)
 
-        print(myfile['remove'])
+        # print(myfile['remove'])
         removearr = myfile['remove']
 
-        for command in removearr:
-            # print(command)
-            print(command[0])
-            print(command[1])
+        print("Entering Set-Group")
+        cmd = 'set-group'
+        if removearr[cmd]:
+            for group in removearr[cmd]:
 
-            cmd = command[0]
-            cmddata = command[1]
-            removecmd_res = client.api_call(cmd, cmddata)
-            print(removecmd_res.data)
+                cmddata = {}
+                cmddata['name'] = group['name']
+                cmddata['details-level'] = "uid"
+                show_group_res = client.api_call("show-group", cmddata)
+                show_group = show_group_res.data
+                if len(show_group['members']) > 1:
+                    cmddata['members'] = group['members']
+                    cmddata['details-level'] = "standard"
+                    print("set-group ", cmddata)
+
+                    set_group_res = client.api_call(cmd, cmddata)
+                    if set_group_res.success is False:
+                        print("Setting Group Failed:\n{}".format(set_group_res.error_message))
+                        exit(1)
+
+                    # removecmd_res = client.api_call(cmd, cmddata)
+                    # print(removecmd_res.data)
+
+                    cmddata['members'] = {'add': group['members']['remove']}
+                    print("RESTORE: set-group", cmddata)
+                    tmplist = [cmd, cmddata]
+                    myfile['restore'].insert(0, tmplist)
+
+                else:
+                    print("Only member, might as well clean up group")
+
+        print("Exit Set-Group")
+
+        print("Entering Set-Access-Rule")
+        if removearr['set-access-rule']:
+            for rule in removearr['set-access-rule']:
+                cmddata = {}
+                cmddata['layer'] = rule['layer']
+                cmddata['uid'] = rule['uid']
+                cmddata['details-level'] = "uid"
+                show_access_rule_res = client.api_call("show-access-rule", cmddata)
+                cmd = "set-access-rule"
+                cmddata['details-level'] = "standard"
+                if 'destination' in rule:
+                    if len(show_access_rule_res.data['destination']) > 1:
+                        cmddata['destination'] = rule['destination']
+                        print(cmd, cmddata)
+
+                        set_access_rule_res = client.api_call(cmd, cmddata)
+                        if set_access_rule_res.success is False:
+                            print("Setting Access Rule Failed:\n{}".format(set_access_rule_res.error_message))
+                            exit(1)
+
+                        cmddata['destination'] = {'add': rule['destination']['remove']}
+                        print("RESTORE: ", cmd, " ", cmddata)
+                        tmplist = [cmd, cmddata]
+                        myfile['restore'].insert(0, tmplist)
+                    else:
+                        print("rule has no more destinations, disable")
+
+                if 'source' in rule:
+                    if len(show_access_rule_res.data['source']) > 1:
+                        cmddata['source'] = rule['source']
+                        print(cmd, cmddata)
+
+                        set_access_rule_res = client.api_call(cmd, cmddata)
+                        if set_access_rule_res.success is False:
+                            print("Setting Access Rule Failed:\n{}".format(set_access_rule_res.error_message))
+                            exit(1)
+
+                        cmddata['source'] = {'add': rule['source']['remove']}
+                        print("RESTORE: ", cmd, " ", cmddata)
+                        tmplist = [cmd, cmddata]
+                        myfile['restore'].insert(0, tmplist)
+
+                    else:
+                        print("rule has no more sources, disable")
+
+        print("Exiting Set-Access-Rule")
+
+        cmd = "delete-host"
+        print("Entering ", cmd)
+        if removearr[cmd]:
+            for host in removearr[cmd]:
+                cmddata = {}
+                cmddata['name'] = host['name']
+                print(cmd, cmddata)
+                show_host_res = client.api_call('show-host', cmddata)
+                if show_host_res.success is False:
+                    print("Show host Failed:\n{}".format(delete_host_res.error_message))
+                    exit(1)
+
+                delete_host_res = client.api_call(cmd, cmddata)
+                if delete_host_res.success is False:
+                    print("Delete Host Failed:\n{}".format(delete_host_res.error_message))
+                    exit(1)
+
+                host = show_host_res.data
+
+                cmd = "add-host"
+                data = {}
+                data['name'] = host['name']
+                data['ipv4-address'] = host['ipv4-address']
+                data['color'] = host['color']
+                data['comments'] = host['comments']
+                if 'host-servers' in host:
+                    data['host-servers'] = host['host-servers']
+                print("the restore data is: ", data)
+                tmplist = [cmd, data]
+                myfile['restore'].insert(0, tmplist)
+
+        print(myfile['restore'])
+        print("Exiting ", cmd)
 
         res = client.api_call("publish", {})
         if res.success is False:
             discard_write_to_log_file(api_client,
                                       "Publish failed. Error:\n{}\nAborting all changes.".format(res.error_message))
-        return False
+            return False
 
         client.api_call("logout", {})
+
+        myfile_pretty = json.dumps(myfile, indent=2)
+        with open('host.json', 'w') as outfile:
+            outfile.write(myfile_pretty)
 
 
 if __name__ == "__main__":

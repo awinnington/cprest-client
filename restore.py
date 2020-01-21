@@ -1,5 +1,8 @@
 ###
 # Uses https://github.com/CheckPointSW/cp_mgmt_api_python_sdk
+# Connecting to remote CheckPoint MGMT server
+#
+#
 ##
 # A package for reading passwords without displaying them on the console
 from __future__ import print_function
@@ -44,7 +47,11 @@ def main():
             print("Could not get the server's fingerprint - Check connectivity with the server.")
             exit(1)
 
+        # login to server:
         login_res = client.login(username, password)
+        # print(login_res.data.get("sid"))
+        # sid = login_res.data.get("sid")
+        # print(sid)
 
         if login_res.success is False:
             print("Login failed:\n{}".format(login_res.error_message))
@@ -52,27 +59,27 @@ def main():
 
         ### Actual Code Starts here ###
 
-        if len(sys.argv) == 1:
-            res = client.api_call("show-sessions", {"details-level": "full"})
-            openchanges = False
-            for session in res.data['objects']:
-                if session['changes'] > 0:
-                    print(session['user-name'], " has ", session['changes'], " changes open and is UID: ",
-                          session['uid'])
-                    openchanges = True
+        with open('./host.json') as json_file:
+            myfile = json.load(json_file)
 
-            if openchanges == False:
-                print("No sessions with changes pending")
+        print(myfile['restore'])
+        restorearr = myfile['restore']
 
-        elif len(sys.argv) > 1:
-            sessionid = sys.argv[1]
-            client.api_call("switch-session", {"uid": sessionid})
-
-            res = client.api_call("publish", {})
+        for command in restorearr:
+            print(command)
+            cmd = command[0]
+            cmddata = command[1]
+            res = client.api_call(cmd, cmddata)
             if res.success is False:
-                discard_write_to_log_file(api_client,
-                                          "Publish failed. Error:\n{}\nAborting all changes.".format(res.error_message))
-                return False
+                print("Command Failed:\n{}".format(res.error_message))
+                exit(1)
+
+            print("Exiting ", cmd)
+
+        res = client.api_call("publish", {})
+        if res.success is False:
+            print("Publish failed. Error:\n{}\nAborting all changes.".format(res.error_message))
+            return False
 
         client.api_call("logout", {})
 
