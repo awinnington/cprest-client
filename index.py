@@ -62,7 +62,7 @@ def main():
         print("Processing. Please wait...")
 
         IPv4 = sys.argv[1]
-        print(IPv4)
+        # print(IPv4)
 
         IPv4obj = {}
         IPv4obj['remove'] = {'delete-host': [], 'set-group': [], 'set-access-rule': []}
