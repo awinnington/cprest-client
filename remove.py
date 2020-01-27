@@ -59,6 +59,12 @@ def main():
 
         ### Actual Code Starts here ###
 
+        mycmd = 'set-session'
+        myobj = {}
+        myobj['description'] = "Session Description"
+        myobj['new-name'] = "New Session Name"
+        session_res = client.api_call(mycmd, myobj)
+
         with open('./host.json') as json_file:
             myfile = json.load(json_file)
 
